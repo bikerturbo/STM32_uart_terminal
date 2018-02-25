@@ -5,6 +5,12 @@ TFT 2.4 SPI display
 Membrane keyboard 5x4 switch
 Arduino Software (IDE) + STM32 hardware core (https://github.com/rogerclarkmelbourne/Arduino_STM32)
 
+
+Mělo by obsahovat...
+Menu pro nastavení (baudrate, ascii nebo dec kód).
+Scrolování displeje.
+Použití Rx ale i Tx (klávesnice 5x4).
+
 */
 
 // hw sclk   PA5
@@ -22,4 +28,4 @@ Adafruit_ILI9341_STM tft = Adafruit_ILI9341_STM(cs, dc, rst);       // Invoke cu
 ...
 ...
 
-to be continued :-) 
+// to be continued :-) 
