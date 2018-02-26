@@ -6,7 +6,7 @@ Membrane keyboard 5x4 switch
 Arduino Software (IDE) + STM32 hardware core (https://github.com/rogerclarkmelbourne/Arduino_STM32)
 
 
-Mělo by obsahovat...
+Melo by obsahovat...
 Menu pro nastavení (baudrate, ascii nebo dec kód).
 Scrolování displeje.
 Použití Rx ale i Tx (klávesnice 5x4).
