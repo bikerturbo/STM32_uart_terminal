@@ -61,15 +61,19 @@ int scrollMode = 1;
 #define TFT_RST     PA11 
 Adafruit_ILI9341_STM tft = Adafruit_ILI9341_STM(TFT_CS, TFT_DC, TFT_RST); // Use hardware SPI
 
+// new variables
+bool deviceSetting; // 0 - device is't set;
+bool viewMode; // 0 - view as char; 1 - view as dec 
+
 
 // Uncomment below the font you find the most readable for you
 // 7x8 bold - perfect for small term font
-#include "font_b7x8.h"
-const uint16_t *fontRects = font_b7x8_Rects;
-const uint16_t *fontOffs = font_b7x8_CharOffs;
-int charWd = 7;
-int charHt = 10; // real 8
-int charYoffs = 1;
+//#include "font_b7x8.h"
+//const uint16_t *fontRects = font_b7x8_Rects;
+//const uint16_t *fontOffs = font_b7x8_CharOffs;
+//int charWd = 7;
+//int charHt = 10; // real 8
+//int charYoffs = 1;
 
 // 7x8 - perfect for small terminal font
 //#include "font_7x8.h"
@@ -88,12 +92,12 @@ int charYoffs = 1;
 //int charYoffs = 1;
 
 // nice 8x16 vga terminal font
-//#include "font_term_8x16.h"
-//const uint16_t *fontRects = wlcd_font_term_8x16_0_127_Rects;
-//const uint16_t *fontOffs = wlcd_font_term_8x16_0_127_CharOffs;
-//int charWd = 8;
-//int charHt = 16;
-//int charYoffs = 0;
+#include "font_term_8x16.h"
+const uint16_t *fontRects = wlcd_font_term_8x16_0_127_Rects;
+const uint16_t *fontOffs = wlcd_font_term_8x16_0_127_CharOffs;
+int charWd = 8;
+int charHt = 16;
+int charYoffs = 0;
 
 // nice big for terminal
 //#include "font_fxs_8x15.h"
@@ -111,13 +115,19 @@ int charYoffs = 1;
 //int charHt = 16;
 //int charYoffs = 0;
 
-void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t sx, uint8_t sy){ //---- odstranit/neresit!!! "bg" a "color" ----//
+
+void drawDec(int16_t x, int16_t y, unsigned int d, uint8_t sx, uint8_t sy){ // zobrazeni dat ve formatu "dec" ??? || reseno upravou funkce drawChar...
+  ;
+}
+
+
+void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t sx, uint8_t sy){ //---- odstranit/neresit(!!!) "bg" a "color" ----//
   if((x >= screenWd)              || // Clip right
      (y >= screenHt)              || // Clip bottom
      ((x + charWd * sx - 1) < 0)  || // Clip left
      ((y + charHt * sy - 1) < 0))    // Clip top
     return;
-  if(c>127) return; //---- budou jenom "char" ----//
+  if(c>127) return; //---- budou jenom "char" nebo "dec" ----//
   uint16_t recIdx = fontOffs[c];
   uint16_t recNum = fontOffs[c+1]-recIdx;
   if(bg && bg!=color) tft.fillRect(x, y, charWd*sx, charHt*sy, bg); //---- "bg" bude stale white!!! ----//
@@ -246,7 +256,7 @@ void scrollFrame(uint16_t vsp)
   tft.writedata(vsp);
 }
 
-void checkButtons()
+/*void checkButtons() // not used
 {
   wrap = digitalRead(WRAP_PIN) ? 0 : 1;
   int orient = digitalRead(HORIZ_PIN) ? 0 : 1;
@@ -257,29 +267,57 @@ void checkButtons()
     screenWd = tft.width();
     screenHt = tft.height();
   }
-}
+}*/
 
-void setup() {
+
+void setup(){
+  
   Serial.begin(115200);
   pinMode(WRAP_PIN,  INPUT_PULLUP);
   pinMode(HORIZ_PIN, INPUT_PULLUP);
   tft.begin();
 //  tft.setRotation(2);
   setupScroll(0, 0);
-  checkButtons();
+  //checkButtons(); // not used
   
   tft.setCursor(0, 0);
   tft.fillScreen(ILI9341_BLACK);
   sx = 1;
   sy = 2;
-  printString("\e[0;44m *** Terminal Init *** \e[0m\n");
+  //printString("\e[0;44m *** Terminal Init *** \e[0m\n"); // modified
+  printString("\e[0;44m___uart_terminal___\e[0m\n"); 
   sy = 1;
-}
+  
+} 
 
 
-void loop(void) 
-{
-  checkButtons();
-  while(Serial.available())
-    printChar(Serial.read());
-}
+void loop(){
+  
+  //checkButtons(); // not used
+  
+  // view setting menu
+  if(!deviceSetting){
+    // view menu .....
+    
+    // default setting
+    viewMode = 0; 
+    deviceSetting = 1;
+  }
+  
+  // reading serial data
+  while(Serial.available()){
+    
+    if(viewMode){
+      printDec(Serial);
+    }
+    else{
+      printChar(Serial.read());
+    } 
+  } // end while
+  
+  // create reading buttons status and change deviceSetting value 
+  if(buttonMenu && deviceSetting){
+    deviceSetting = 0;
+  }
+  
+} 
