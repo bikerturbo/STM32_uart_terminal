@@ -1,4 +1,4 @@
-# STM32_uart_terminal
+# STM32_uart_terminal - Attention! Now isn't working! 
 Testing serial (TTL) communication without a PC.
 
 ## Idea
