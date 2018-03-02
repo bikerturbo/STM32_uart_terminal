@@ -63,7 +63,7 @@ Adafruit_ILI9341_STM tft = Adafruit_ILI9341_STM(TFT_CS, TFT_DC, TFT_RST); // Use
 
 // new variables
 bool deviceSetting; // 0 - device is't set;
-bool viewMode; // 0 - view as char; 1 - view as dec 
+byte viewMode; // 0 - view as dec (only number); 2 - view as char (all char); 3 - view to terminal ;-) 
 
 
 // Uncomment below the font you find the most readable for you
@@ -116,18 +116,19 @@ int charYoffs = 0;
 //int charYoffs = 0;
 
 
-void drawDec(int16_t x, int16_t y, unsigned int d, uint8_t sx, uint8_t sy){ // zobrazeni dat ve formatu "dec" ??? || reseno upravou funkce drawChar...
+void drawDec(int16_t x, int16_t y, unsigned int d, uint8_t sx, uint8_t sy){ // zobrazeni dat ve formatu "dec" 
   ;
 }
 
 
+// send "char" to display
 void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t sx, uint8_t sy){ //---- odstranit/neresit(!!!) "bg" a "color" ----//
   if((x >= screenWd)              || // Clip right
      (y >= screenHt)              || // Clip bottom
      ((x + charWd * sx - 1) < 0)  || // Clip left
      ((y + charHt * sy - 1) < 0))    // Clip top
     return;
-  if(c>127) return; //---- budou jenom "char" nebo "dec" ----//
+  if(c>127) return; //---- budou jenom "char" (nebo "dec") ----//
   uint16_t recIdx = fontOffs[c];
   uint16_t recNum = fontOffs[c+1]-recIdx;
   if(bg && bg!=color) tft.fillRect(x, y, charWd*sx, charHt*sy, bg); //---- "bg" bude stale white!!! ----//
@@ -152,8 +153,8 @@ void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg
     }
 }
 
-void scroll()
-{
+
+void scroll(){
   xp=0;
   yp+=charHt*sy;
   if(yp+charHt>screenHt) yp=0;
@@ -168,12 +169,12 @@ int escMode = 0;
 int nVals = 0;
 int vals[10]={0};
 
-void printChar(char c)
-{
-  if(c==0x1b) { escMode=1; return; }
+
+void printChar(char c){
+  if(c==0x1b) { escMode=1; return; } // Esc
   if(escMode==1) {
     if(c=='[') { escMode=2; nVals=0; } else escMode=0;
-    return;
+    return; 
   }
   if(escMode==2) {
     if(isdigit(c))
@@ -220,11 +221,11 @@ void printChar(char c)
     }
     return;
   }
-  if(c==10) { scroll(); return; }
-  if(c==13) { xp=0; return; }
-  if(c==8) { 
+  if(c==10) { scroll(); return; } // LF - next line
+  if(c==13) { xp=0; return; } // CR - return to firs position...
+  if(c==8) { // back space... uf... :-D
     if(xp>0) xp-=charWd*sx; 
-    tft.fillRect(xp, yp, charWd*sx, charHt*sy, ILI9341_BLACK);
+    tft.fillRect(xp, yp, charWd*sx, charHt*sy, ILI9341_BLACK); // send to display
     return; 
   }
   if(xp<screenWd)
@@ -233,13 +234,15 @@ void printChar(char c)
   if(xp>=screenWd && wrap) scroll();
 }
 
+
+// only for Title(?)...
 void printString(char *str)
 {
   while(*str) printChar(*str++);
 }
 
-void setupScroll(uint16_t tfa, uint16_t bfa) 
-{
+
+void setupScroll(uint16_t tfa, uint16_t bfa){
   tft.writecommand(ILI9341_VSCRDEF); // Vertical scroll definition
   tft.writedata(tfa >> 8);
   tft.writedata(tfa);
@@ -248,6 +251,7 @@ void setupScroll(uint16_t tfa, uint16_t bfa)
   tft.writedata(bfa >> 8);
   tft.writedata(bfa);
 }
+
 
 void scrollFrame(uint16_t vsp) 
 {
@@ -305,18 +309,25 @@ void loop(){
   }
   
   // reading serial data
-  while(Serial.available()){
-    
-    if(viewMode){
-      printDec(Serial);
+  if(viewMode == 1){ // dec
+    while(Serial.available()){
+      printDec(Serial.read());
     }
-    else{
+  }
+  else if(viewMode == 2){ // char
+    while(Serial.available()){
+      printOnlyChar(Serial.read());
+    }
+  }
+  else{ // terminal
+    while(Serial.available()){
       printChar(Serial.read());
-    } 
-  } // end while
+    }
+  } 
   
-  // create reading buttons status and change deviceSetting value 
-  if(buttonMenu && deviceSetting){
+  
+  // reading Menu button status and next change "deviceSetting" value for view setting menu 
+  if(buttonMenu && deviceSetting){ // buttonMenu = GPIOX->regs->IDR & (1<<Y) = Port X, pin number Y
     deviceSetting = 0;
   }
   
