@@ -1,4 +1,4 @@
-# STM32_uart_terminal
+# STM32_uart_terminal - Pozor! Nyní nefunkční!
 Testování seriové (TTL) komunikace bez použití PC.
 
 ## Myšlenka
